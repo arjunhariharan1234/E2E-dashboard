@@ -8,7 +8,7 @@ export default function BranchPerformance({ data }) {
     .map((d) => ({
       name: d.key,
       'On Time': d.onTime,
-      'Late': d.late,
+      'Delayed': d.late,
       total: d.onTime + d.late,
     }))
     .sort((a, b) => b.total - a.total);
@@ -22,8 +22,8 @@ export default function BranchPerformance({ data }) {
         <span>Metric:</span>
         <FieldInfo field="staBreach" />
       </div>
-      <ResponsiveContainer width="100%" height={360}>
-        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 80 }}>
+      <ResponsiveContainer width="100%" height={450}>
+        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 100 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis
             dataKey="name"
@@ -38,7 +38,7 @@ export default function BranchPerformance({ data }) {
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="On Time" stackId="a" fill="#1fa8c9" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="Late" stackId="a" fill="#ff5a5f" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Delayed" stackId="a" fill="#ff5a5f" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

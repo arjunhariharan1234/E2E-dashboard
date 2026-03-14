@@ -178,9 +178,9 @@ export default function TripDrillDown({ data }) {
                   <td className="px-3 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                        r.status === 'On Time'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-red-50 text-red-700'
+                        r.status === 'Delayed'
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-emerald-50 text-emerald-700'
                       }`}
                     >
                       {r.status}

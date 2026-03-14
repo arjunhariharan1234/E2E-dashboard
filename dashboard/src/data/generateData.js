@@ -266,7 +266,7 @@ function getTripDetails(records) {
         consignee: r.consigneeName,
         originCity: r.originCity,
         destinationCity: r.destinationCity,
-        status: r.staBreach ? 'Late' : 'On Time',
+        status: r.staBreach ? 'Delayed' : 'On Time',
         delayHours: delayHours,
         delayBucket,
         distance: r.distance,

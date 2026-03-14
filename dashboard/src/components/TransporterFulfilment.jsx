@@ -22,7 +22,7 @@ export default function TransporterFulfilment({ data }) {
         <span>Grouped by</span>
         <FieldInfo field="transporterName" />
       </div>
-      <ResponsiveContainer width="100%" height={360}>
+      <ResponsiveContainer width="100%" height={450}>
         <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 80 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-40} textAnchor="end" interval={0} />

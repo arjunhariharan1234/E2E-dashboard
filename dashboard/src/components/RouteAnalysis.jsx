@@ -8,7 +8,7 @@ export default function RouteAnalysis({ data }) {
     .map((d) => ({
       name: d.key,
       'On Time': d.onTime,
-      Late: d.late,
+      Delayed: d.late,
       total: d.onTime + d.late,
     }))
     .sort((a, b) => b.total - a.total)
@@ -23,15 +23,15 @@ export default function RouteAnalysis({ data }) {
         <span>Metric:</span>
         <FieldInfo field="staBreach" />
       </div>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 100 }}>
+      <ResponsiveContainer width="100%" height={500}>
+        <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 120 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           <XAxis dataKey="name" tick={{ fontSize: 9 }} angle={-50} textAnchor="end" interval={0} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar dataKey="On Time" stackId="a" fill="#1fa8c9" />
-          <Bar dataKey="Late" stackId="a" fill="#ff5a5f" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Delayed" stackId="a" fill="#ff5a5f" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
