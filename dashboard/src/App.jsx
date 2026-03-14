@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
-  generateDataset,
+  loadDataset,
   getKPIs,
   aggregateByField,
   aggregateByTwoFields,
@@ -18,8 +18,9 @@ import MoMTrends from './components/MoMTrends';
 import RouteHeatmap from './components/RouteHeatmap';
 import TripDrillDown from './components/TripDrillDown';
 import Filters from './components/Filters';
+import SupersetFeatures from './components/SupersetFeatures';
 
-const ALL_DATA = generateDataset();
+const ALL_DATA = loadDataset();
 
 export default function App() {
   const [filters, setFilters] = useState({
@@ -60,6 +61,7 @@ export default function App() {
     { id: 'routes', label: 'Routes' },
     { id: 'trends', label: 'MoM Trends' },
     { id: 'drilldown', label: 'Trip Details' },
+    { id: 'superset', label: 'Superset Features' },
   ];
 
   return (
@@ -71,12 +73,12 @@ export default function App() {
               End to End Lifecycle Dashboard
             </h1>
             <p className="text-sm text-blue-200 mt-0.5">
-              Branch & Transporter Performance &mdash; Shipment Lifecycle
+              Brakes India &mdash; Indent to Delivery &mdash; Shipment Lifecycle
             </p>
           </div>
           <div className="text-xs text-blue-300 text-right">
-            <div>POC Dashboard</div>
-            <div>Data: Oct 2025 &mdash; Feb 2026</div>
+            <div>Data: Sep 2025 &mdash; Mar 2026</div>
+            <div>{ALL_DATA.length.toLocaleString()} records</div>
           </div>
         </div>
       </header>
@@ -106,52 +108,62 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <KPICard label="Total Indents" value={kpis.totalIndents.toLocaleString()} color="#1e3a5f" />
-          <KPICard label="Acceptance Rate" value={`${kpis.acceptanceRate}%`} color="#1fa8c9" target={80} actual={parseFloat(kpis.acceptanceRate)} />
-          <KPICard label="Vehicles Placed" value={kpis.vehiclesPlaced.toLocaleString()} color="#6c5ce7" />
-          <KPICard label="Placement On Time" value={`${kpis.placementRate}%`} color="#f39c12" target={75} actual={parseFloat(kpis.placementRate)} />
-          <KPICard label="Total Trips" value={kpis.totalTrips.toLocaleString()} color="#1e3a5f" />
-          <KPICard label="OTD Rate" value={`${kpis.otdRate}%`} color="#2ecc71" target={70} actual={parseFloat(kpis.otdRate)} />
-        </div>
-
-        {(activeSection === 'overview' || activeSection === 'branch') && (
-          <Section title="Branch Performance &mdash; Delivery Compliance">
-            <BranchPerformance data={branchData} />
-          </Section>
-        )}
-
-        {(activeSection === 'overview' || activeSection === 'transporter') && (
+        {activeSection !== 'superset' && (
           <>
-            <Section title="Transporter Performance Scorecard">
-              <TransporterScorecard data={transporterData} />
-            </Section>
-            <Section title="Transporter Indent Fulfilment">
-              <TransporterFulfilment data={transporterData} />
-            </Section>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+              <KPICard label="Total Trips" value={kpis.totalTrips.toLocaleString()} color="#1e3a5f" fieldKey="totalTrips" />
+              <KPICard label="OTD Rate" value={`${kpis.otdRate}%`} color="#2ecc71" target={80} actual={parseFloat(kpis.otdRate)} fieldKey="onTimeRate" />
+              <KPICard label="Indent Acceptance" value={`${kpis.acceptanceRate}%`} color="#1fa8c9" target={80} actual={parseFloat(kpis.acceptanceRate)} fieldKey="acceptanceRate" />
+              <KPICard label="Tracking Rate" value={`${kpis.trackingRate}%`} color="#6c5ce7" target={85} actual={parseFloat(kpis.trackingRate)} fieldKey="trackingRate" />
+              <KPICard label="Consent Rate" value={`${kpis.consentRate}%`} color="#f39c12" target={70} actual={parseFloat(kpis.consentRate)} fieldKey="consentRate" />
+              <KPICard label="ePOD Verified" value={`${kpis.epodRate}%`} color="#e74c3c" target={50} actual={parseFloat(kpis.epodRate)} fieldKey="epodRate" />
+            </div>
+
+            {(activeSection === 'overview' || activeSection === 'branch') && (
+              <Section title="Branch Performance &mdash; On Time vs Late">
+                <BranchPerformance data={branchData} />
+              </Section>
+            )}
+
+            {(activeSection === 'overview' || activeSection === 'transporter') && (
+              <>
+                <Section title="Transporter Performance Scorecard">
+                  <TransporterScorecard data={transporterData} />
+                </Section>
+                <Section title="Transporter Indent Fulfilment">
+                  <TransporterFulfilment data={transporterData} />
+                </Section>
+              </>
+            )}
+
+            {(activeSection === 'overview' || activeSection === 'routes') && (
+              <Section title="Route Level &mdash; On Time vs Late">
+                <RouteAnalysis data={routeData} />
+              </Section>
+            )}
+
+            {(activeSection === 'overview' || activeSection === 'trends') && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <Section title="MoM Transporter OTD %">
+                  <MoMTrends data={momData} months={MONTHS} />
+                </Section>
+                <Section title="Route OTD % &mdash; Monthly Heatmap">
+                  <RouteHeatmap data={routeMomData} months={MONTHS} />
+                </Section>
+              </div>
+            )}
+
+            {(activeSection === 'overview' || activeSection === 'drilldown') && (
+              <Section title="Trip Detail Drill Down">
+                <TripDrillDown data={tripDetails} />
+              </Section>
+            )}
           </>
         )}
 
-        {(activeSection === 'overview' || activeSection === 'routes') && (
-          <Section title="Route Level &mdash; On Time vs Late">
-            <RouteAnalysis data={routeData} />
-          </Section>
-        )}
-
-        {(activeSection === 'overview' || activeSection === 'trends') && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-            <Section title="MoM Transporter Performance">
-              <MoMTrends data={momData} months={MONTHS} />
-            </Section>
-            <Section title="Route OTD % &mdash; Monthly Heatmap">
-              <RouteHeatmap data={routeMomData} months={MONTHS} />
-            </Section>
-          </div>
-        )}
-
-        {(activeSection === 'overview' || activeSection === 'drilldown') && (
-          <Section title="Trip Detail Drill Down">
-            <TripDrillDown data={tripDetails} />
+        {activeSection === 'superset' && (
+          <Section title="Superset Capabilities &mdash; What You Get on Production">
+            <SupersetFeatures />
           </Section>
         )}
       </div>

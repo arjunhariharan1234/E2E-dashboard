@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { DELAY_BUCKETS } from '../data/generateData';
+import FieldInfo from './FieldInfo';
 
 const BUCKET_COLORS = {
   'On Time': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-300', activeBg: 'bg-emerald-600' },
@@ -13,7 +14,7 @@ const BUCKET_COLORS = {
 export default function TripDrillDown({ data }) {
   const [search, setSearch] = useState('');
   const [activeBuckets, setActiveBuckets] = useState([]);
-  const [sortKey, setSortKey] = useState('delayMinutes');
+  const [sortKey, setSortKey] = useState('delayHours');
   const [sortAsc, setSortAsc] = useState(false);
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
@@ -51,13 +52,18 @@ export default function TripDrillDown({ data }) {
           r.tripId.toLowerCase().includes(s) ||
           r.transporter.toLowerCase().includes(s) ||
           r.branch.toLowerCase().includes(s) ||
-          r.route.toLowerCase().includes(s)
+          r.route.toLowerCase().includes(s) ||
+          r.consignee.toLowerCase().includes(s) ||
+          (r.vehicleNumber && r.vehicleNumber.toLowerCase().includes(s))
       );
     }
 
     rows = [...rows].sort((a, b) => {
       const aVal = a[sortKey];
       const bVal = b[sortKey];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
       if (typeof aVal === 'string') return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       return sortAsc ? aVal - bVal : bVal - aVal;
     });
@@ -73,20 +79,21 @@ export default function TripDrillDown({ data }) {
     else { setSortKey(key); setSortAsc(false); }
   };
 
-  const SortHeader = ({ label, field }) => (
+  const SortHeader = ({ label, field, fieldInfo }) => (
     <th
       onClick={() => handleSort(field)}
       className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
     >
       {label}
+      {fieldInfo && <FieldInfo field={fieldInfo} />}
       {sortKey === field && <span className="ml-1">{sortAsc ? '\u25B2' : '\u25BC'}</span>}
     </th>
   );
 
-  function formatDelayHours(delayHours) {
-    if (delayHours === null || delayHours <= 0) return '-';
-    if (delayHours < 1) return `${Math.round(delayHours * 60)}m`;
-    return `${delayHours}h`;
+  function formatDelayHours(hours) {
+    if (hours === null || hours === undefined || hours <= 0) return '-';
+    if (hours < 1) return `${Math.round(hours * 60)}m`;
+    return `${hours}h`;
   }
 
   return (
@@ -95,6 +102,7 @@ export default function TripDrillDown({ data }) {
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delay Buckets</span>
+          <FieldInfo field="staBreach" />
           {activeBuckets.length > 0 && (
             <button onClick={clearBuckets} className="text-[10px] text-red-500 hover:text-red-700 underline cursor-pointer">
               Clear
@@ -132,7 +140,7 @@ export default function TripDrillDown({ data }) {
       <div className="flex items-center gap-3 mb-3">
         <input
           type="text"
-          placeholder="Search trips, transporter, branch, route..."
+          placeholder="Search trip ID, vehicle, transporter, branch, route, consignee..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
           className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/20 focus:border-[#1e3a5f]"
@@ -145,13 +153,14 @@ export default function TripDrillDown({ data }) {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <SortHeader label="Trip ID" field="tripId" />
-              <SortHeader label="Vehicle" field="vehicleId" />
-              <SortHeader label="Transporter" field="transporter" />
-              <SortHeader label="Branch" field="branch" />
-              <SortHeader label="Route" field="route" />
-              <SortHeader label="Status" field="status" />
-              <SortHeader label="Delay (hrs)" field="delayMinutes" />
+              <SortHeader label="Trip ID" field="tripId" fieldInfo="tripId" />
+              <SortHeader label="Vehicle" field="vehicleNumber" fieldInfo="vehicleNumber" />
+              <SortHeader label="Transporter" field="transporter" fieldInfo="transporterName" />
+              <SortHeader label="Branch" field="branch" fieldInfo="branchName" />
+              <SortHeader label="Route" field="route" fieldInfo="routeName" />
+              <SortHeader label="Consignee" field="consignee" fieldInfo="consigneeName" />
+              <SortHeader label="Status" field="status" fieldInfo="staBreach" />
+              <SortHeader label="Delay (hrs)" field="delayHours" />
               <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Bucket</th>
             </tr>
           </thead>
@@ -161,10 +170,11 @@ export default function TripDrillDown({ data }) {
               return (
                 <tr key={r.tripId} className="border-b border-gray-50 hover:bg-gray-50 transition">
                   <td className="px-3 py-2 font-mono text-xs text-gray-700">{r.tripId}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-600">{r.vehicleId}</td>
-                  <td className="px-3 py-2 text-gray-700">{r.transporter}</td>
-                  <td className="px-3 py-2 text-gray-600">{r.branch}</td>
-                  <td className="px-3 py-2 text-gray-600 text-xs">{r.route}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-gray-600">{r.vehicleNumber}</td>
+                  <td className="px-3 py-2 text-gray-700 text-xs">{r.transporter}</td>
+                  <td className="px-3 py-2 text-gray-600 text-xs">{r.branch}</td>
+                  <td className="px-3 py-2 text-gray-600 text-[10px]">{r.route}</td>
+                  <td className="px-3 py-2 text-gray-600 text-[10px]">{r.consignee}</td>
                   <td className="px-3 py-2">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-semibold ${

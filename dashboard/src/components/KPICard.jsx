@@ -1,4 +1,6 @@
-export default function KPICard({ label, value, color, target, actual }) {
+import FieldInfo from './FieldInfo';
+
+export default function KPICard({ label, value, color, target, actual, fieldKey }) {
   const isPercentage = typeof target === 'number';
   const status = isPercentage
     ? actual >= target
@@ -17,7 +19,10 @@ export default function KPICard({ label, value, color, target, actual }) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col justify-between border-t-4 hover:shadow-md transition-shadow"
       style={{ borderTopColor: isPercentage ? statusColors[status] : color }}>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+        {label}
+        {fieldKey && <FieldInfo field={fieldKey} />}
+      </p>
       <p className="text-2xl font-bold" style={{ color: isPercentage ? statusColors[status] : color }}>
         {value}
       </p>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import FieldInfo from './FieldInfo';
 
 function pct(num, den) {
   return den ? ((num / den) * 100).toFixed(1) : '0.0';
@@ -20,13 +21,19 @@ export default function TransporterScorecard({ data }) {
   const rows = useMemo(() => {
     const mapped = data.map((d) => ({
       name: d.key,
-      indents: d.indents,
-      accepted: d.accepted,
-      acceptPct: pct(d.accepted, d.indents),
-      placed: d.placed,
-      placePct: pct(d.placedOnTime, d.placed),
-      trips: d.trips,
-      otd: pct(d.onTime, d.trips),
+      total: d.total,
+      indents: d.hasIndent,
+      accepted: d.indentAccepted,
+      acceptPct: pct(d.indentAccepted, d.hasIndent),
+      closed: d.closed,
+      onTime: d.onTime,
+      otd: pct(d.onTime, d.closed),
+      tracked: d.tracked,
+      trackPct: pct(d.tracked, d.total),
+      consent: d.consentDone,
+      consentPct: pct(d.consentDone, d.total),
+      epod: d.epodSubmitted,
+      epodPct: pct(d.epodSubmitted, d.total),
     }));
 
     mapped.sort((a, b) => {
@@ -44,12 +51,13 @@ export default function TransporterScorecard({ data }) {
     else { setSortKey(key); setSortAsc(false); }
   };
 
-  const SortHeader = ({ label, field }) => (
+  const SortHeader = ({ label, field, fieldInfo }) => (
     <th
       onClick={() => handleSort(field)}
       className="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap"
     >
       {label}
+      {fieldInfo && <FieldInfo field={fieldInfo} />}
       {sortKey === field && (
         <span className="ml-1">{sortAsc ? '\u25B2' : '\u25BC'}</span>
       )}
@@ -61,32 +69,36 @@ export default function TransporterScorecard({ data }) {
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <SortHeader label="Transporter" field="name" />
-            <SortHeader label="Indents" field="indents" />
-            <SortHeader label="Accepted" field="accepted" />
-            <SortHeader label="Accept %" field="acceptPct" />
-            <SortHeader label="Placed" field="placed" />
-            <SortHeader label="Place OT %" field="placePct" />
-            <SortHeader label="Trips" field="trips" />
-            <SortHeader label="OTD %" field="otd" />
+            <SortHeader label="Transporter" field="name" fieldInfo="transporterName" />
+            <SortHeader label="Trips" field="total" fieldInfo="totalTrips" />
+            <SortHeader label="Indents" field="indents" fieldInfo="hasIndent" />
+            <SortHeader label="Accept %" field="acceptPct" fieldInfo="acceptanceRate" />
+            <SortHeader label="OTD %" field="otd" fieldInfo="onTimeRate" />
+            <SortHeader label="Tracking %" field="trackPct" fieldInfo="trackingRate" />
+            <SortHeader label="Consent %" field="consentPct" fieldInfo="consentRate" />
+            <SortHeader label="ePOD %" field="epodPct" fieldInfo="epodRate" />
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => (
             <tr key={r.name} className="border-b border-gray-50 hover:bg-gray-50 transition">
-              <td className="px-3 py-2.5 font-medium text-gray-800">{r.name}</td>
+              <td className="px-3 py-2.5 font-medium text-gray-800 text-xs">{r.name}</td>
+              <td className="px-3 py-2.5 text-gray-600">{r.total}</td>
               <td className="px-3 py-2.5 text-gray-600">{r.indents}</td>
-              <td className="px-3 py-2.5 text-gray-600">{r.accepted}</td>
               <td className="px-3 py-2.5">
                 <CellColor value={r.acceptPct} thresholds={{ good: 80, warn: 60 }} />
               </td>
-              <td className="px-3 py-2.5 text-gray-600">{r.placed}</td>
               <td className="px-3 py-2.5">
-                <CellColor value={r.placePct} thresholds={{ good: 75, warn: 55 }} />
+                <CellColor value={r.otd} thresholds={{ good: 80, warn: 60 }} />
               </td>
-              <td className="px-3 py-2.5 text-gray-600">{r.trips}</td>
               <td className="px-3 py-2.5">
-                <CellColor value={r.otd} thresholds={{ good: 70, warn: 50 }} />
+                <CellColor value={r.trackPct} thresholds={{ good: 85, warn: 70 }} />
+              </td>
+              <td className="px-3 py-2.5">
+                <CellColor value={r.consentPct} thresholds={{ good: 70, warn: 50 }} />
+              </td>
+              <td className="px-3 py-2.5">
+                <CellColor value={r.epodPct} thresholds={{ good: 50, warn: 30 }} />
               </td>
             </tr>
           ))}
