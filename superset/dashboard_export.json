@@ -1,0 +1,349 @@
+{
+  "_file_name": "indent_delivery_compliance_dashboard.json",
+  "description": "Superset Dashboard Export - Indent to Delivery Compliance Dashboard",
+  "notes": "This is a configuration reference. Import via Superset UI or CLI after creating datasets.",
+
+  "dashboard": {
+    "dashboard_title": "Indent → Delivery Compliance Dashboard",
+    "slug": "indent-delivery-compliance",
+    "certified_by": "Data Engineering Team",
+    "description": "Weekly operational compliance review: Branch & Transporter performance across the shipment lifecycle (Indent → Acceptance → Placement → Trip → Delivery)",
+
+    "metadata": {
+      "color_scheme": "supersetColors",
+      "refresh_frequency": 300,
+      "timed_refresh_immune_slices": [],
+      "expanded_slices": {},
+      "label_colors": {
+        "On Time": "#1FA8C9",
+        "Late": "#FF5A5F",
+        "Accepted": "#1FA8C9",
+        "Not Accepted": "#FF5A5F"
+      },
+      "shared_label_colors": {},
+      "color_scheme_domain": [],
+      "cross_filters_enabled": true,
+      "native_filter_configuration": []
+    },
+
+    "position": {
+      "DASHBOARD_VERSION_KEY": "v2",
+      "HEADER_ID": { "id": "HEADER_ID", "type": "HEADER", "meta": { "text": "Indent → Delivery Compliance Dashboard" }},
+
+      "ROW-SCORECARD": {
+        "id": "ROW-SCORECARD",
+        "type": "ROW",
+        "meta": { "background": "BACKGROUND_TRANSPARENT" },
+        "children": [
+          "CHART-KPI-INDENTS",
+          "CHART-KPI-ACCEPTANCE",
+          "CHART-KPI-VEHICLES",
+          "CHART-KPI-PLACEMENT",
+          "CHART-KPI-TRIPS",
+          "CHART-KPI-OTD"
+        ]
+      },
+
+      "ROW-BRANCH": {
+        "id": "ROW-BRANCH",
+        "type": "ROW",
+        "children": ["CHART-BRANCH-STACKED-BAR"]
+      },
+
+      "ROW-TRANSPORTER": {
+        "id": "ROW-TRANSPORTER",
+        "type": "ROW",
+        "children": ["CHART-TRANSPORTER-TABLE", "CHART-TRANSPORTER-GROUPED-BAR"]
+      },
+
+      "ROW-ROUTE": {
+        "id": "ROW-ROUTE",
+        "type": "ROW",
+        "children": ["CHART-ROUTE-BAR"]
+      },
+
+      "ROW-MOM": {
+        "id": "ROW-MOM",
+        "type": "ROW",
+        "children": ["CHART-MOM-LINE", "CHART-ROUTE-HEATMAP"]
+      },
+
+      "ROOT_ID": {
+        "id": "ROOT_ID",
+        "type": "ROOT",
+        "children": [
+          "ROW-SCORECARD",
+          "DIVIDER-1",
+          "ROW-BRANCH",
+          "DIVIDER-2",
+          "ROW-TRANSPORTER",
+          "DIVIDER-3",
+          "ROW-ROUTE",
+          "DIVIDER-4",
+          "ROW-MOM"
+        ]
+      }
+    }
+  },
+
+  "native_filters": [
+    {
+      "name": "Date Range",
+      "filter_type": "filter_time",
+      "targets": [{ "column": "month_date", "dataset": "mv_lifecycle_summary" }],
+      "default_value": "Last 3 months",
+      "scope": "global"
+    },
+    {
+      "name": "Branch",
+      "filter_type": "filter_select",
+      "targets": [{ "column": "branch_name", "dataset": "mv_lifecycle_summary" }],
+      "multi_select": true,
+      "search_all_options": true,
+      "scope": "global"
+    },
+    {
+      "name": "Transporter",
+      "filter_type": "filter_select",
+      "targets": [{ "column": "transporter_name", "dataset": "mv_lifecycle_summary" }],
+      "multi_select": true,
+      "search_all_options": true,
+      "scope": "global"
+    },
+    {
+      "name": "Route",
+      "filter_type": "filter_select",
+      "targets": [{ "column": "route_name", "dataset": "mv_lifecycle_summary" }],
+      "multi_select": true,
+      "search_all_options": true,
+      "scope": "global"
+    }
+  ],
+
+  "charts": [
+    {
+      "id": "CHART-KPI-INDENTS",
+      "chart_name": "Total Indents Published",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": { "expressionType": "SQL", "sqlExpression": "SUM(indents_published)", "label": "Total Indents" },
+        "header_font_size": 0.4,
+        "subheader_font_size": 0.15,
+        "y_axis_format": "SMART_NUMBER"
+      }
+    },
+    {
+      "id": "CHART-KPI-ACCEPTANCE",
+      "chart_name": "Indent Acceptance Rate",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": {
+          "expressionType": "SQL",
+          "sqlExpression": "ROUND(SUM(indents_accepted)::numeric / NULLIF(SUM(indents_published), 0) * 100, 1)",
+          "label": "Acceptance %"
+        },
+        "header_font_size": 0.4,
+        "subheader_font_size": 0.15,
+        "y_axis_format": ".1f"
+      }
+    },
+    {
+      "id": "CHART-KPI-VEHICLES",
+      "chart_name": "Vehicles Placed",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": { "expressionType": "SQL", "sqlExpression": "SUM(vehicles_placed)", "label": "Vehicles Placed" },
+        "header_font_size": 0.4,
+        "y_axis_format": "SMART_NUMBER"
+      }
+    },
+    {
+      "id": "CHART-KPI-PLACEMENT",
+      "chart_name": "Placement On Time %",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": {
+          "expressionType": "SQL",
+          "sqlExpression": "ROUND(SUM(vehicles_placed_on_time)::numeric / NULLIF(SUM(vehicles_placed), 0) * 100, 1)",
+          "label": "Placement %"
+        },
+        "header_font_size": 0.4,
+        "y_axis_format": ".1f"
+      }
+    },
+    {
+      "id": "CHART-KPI-TRIPS",
+      "chart_name": "Total Trips Created",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": { "expressionType": "SQL", "sqlExpression": "SUM(trips_created)", "label": "Total Trips" },
+        "header_font_size": 0.4,
+        "y_axis_format": "SMART_NUMBER"
+      }
+    },
+    {
+      "id": "CHART-KPI-OTD",
+      "chart_name": "OTD Rate",
+      "viz_type": "big_number_total",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "metric": {
+          "expressionType": "SQL",
+          "sqlExpression": "ROUND(SUM(trips_on_time)::numeric / NULLIF(SUM(trips_created), 0) * 100, 1)",
+          "label": "OTD %"
+        },
+        "header_font_size": 0.4,
+        "y_axis_format": ".1f"
+      }
+    },
+
+    {
+      "id": "CHART-BRANCH-STACKED-BAR",
+      "chart_name": "Branch Performance — Delivery Compliance",
+      "viz_type": "echarts_timeseries_bar",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "x_axis": "branch_name",
+        "groupby": ["branch_name"],
+        "metrics": [
+          { "expressionType": "SQL", "sqlExpression": "SUM(trips_on_time)", "label": "On Time" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(trips_late)", "label": "Late" }
+        ],
+        "stack": true,
+        "show_legend": true,
+        "color_scheme": "supersetColors",
+        "x_axis_title": "Branch",
+        "y_axis_title": "Trip Count",
+        "row_limit": 100,
+        "order_desc": true,
+        "truncate_metric": true
+      }
+    },
+
+    {
+      "id": "CHART-TRANSPORTER-TABLE",
+      "chart_name": "Transporter Performance Scorecard",
+      "viz_type": "table",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "groupby": ["transporter_name"],
+        "metrics": [
+          { "expressionType": "SQL", "sqlExpression": "SUM(indents_published)", "label": "Indents Published" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(indents_accepted)", "label": "Indents Accepted" },
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(indents_accepted)::numeric / NULLIF(SUM(indents_published), 0) * 100, 1)", "label": "Acceptance %" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(vehicles_placed)", "label": "Vehicles Placed" },
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(vehicles_placed_on_time)::numeric / NULLIF(SUM(vehicles_placed), 0) * 100, 1)", "label": "Placement On Time %" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(trips_created)", "label": "Trips Delivered" },
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(trips_on_time)::numeric / NULLIF(SUM(trips_created), 0) * 100, 1)", "label": "OTD %" }
+        ],
+        "table_timestamp_format": "smart_date",
+        "page_length": 20,
+        "include_search": true,
+        "show_cell_bars": false,
+        "color_pn": true,
+        "conditional_formatting": [
+          { "column": "Acceptance %", "operator": "<", "value": 60, "color": "#FF5A5F" },
+          { "column": "Acceptance %", "operator": ">=", "value": 80, "color": "#1FA8C9" },
+          { "column": "Placement On Time %", "operator": "<", "value": 60, "color": "#FF5A5F" },
+          { "column": "Placement On Time %", "operator": ">=", "value": 80, "color": "#1FA8C9" },
+          { "column": "OTD %", "operator": "<", "value": 60, "color": "#FF5A5F" },
+          { "column": "OTD %", "operator": ">=", "value": 80, "color": "#1FA8C9" }
+        ],
+        "order_desc": true
+      }
+    },
+
+    {
+      "id": "CHART-TRANSPORTER-GROUPED-BAR",
+      "chart_name": "Transporter Indent Fulfilment",
+      "viz_type": "echarts_timeseries_bar",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "x_axis": "transporter_name",
+        "groupby": ["transporter_name"],
+        "metrics": [
+          { "expressionType": "SQL", "sqlExpression": "SUM(indents_accepted)", "label": "Accepted" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(indents_published) - SUM(indents_accepted)", "label": "Not Accepted" }
+        ],
+        "stack": false,
+        "show_legend": true,
+        "x_axis_title": "Transporter",
+        "y_axis_title": "Indent Count",
+        "color_scheme": "supersetColors"
+      }
+    },
+
+    {
+      "id": "CHART-ROUTE-BAR",
+      "chart_name": "Route Level — On Time vs Late",
+      "viz_type": "echarts_timeseries_bar",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "x_axis": "route_name",
+        "groupby": ["route_name"],
+        "metrics": [
+          { "expressionType": "SQL", "sqlExpression": "SUM(trips_on_time)", "label": "Trips On Time" },
+          { "expressionType": "SQL", "sqlExpression": "SUM(trips_late)", "label": "Trips Late" }
+        ],
+        "stack": true,
+        "show_legend": true,
+        "row_limit": 50,
+        "x_axis_title": "Route",
+        "y_axis_title": "Trip Count"
+      }
+    },
+
+    {
+      "id": "CHART-MOM-LINE",
+      "chart_name": "MoM Transporter Performance Trends",
+      "viz_type": "echarts_timeseries_line",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "x_axis": "month_date",
+        "time_grain_sqla": "P1M",
+        "groupby": ["transporter_name"],
+        "metrics": [
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(trips_on_time)::numeric / NULLIF(SUM(trips_created), 0) * 100, 1)", "label": "OTD %" },
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(vehicles_placed_on_time)::numeric / NULLIF(SUM(vehicles_placed), 0) * 100, 1)", "label": "Placement %" },
+          { "expressionType": "SQL", "sqlExpression": "ROUND(SUM(indents_accepted)::numeric / NULLIF(SUM(indents_published), 0) * 100, 1)", "label": "Acceptance %" }
+        ],
+        "show_legend": true,
+        "rich_tooltip": true,
+        "x_axis_time_format": "%b %Y",
+        "y_axis_format": ".1f",
+        "y_axis_title": "Percentage (%)",
+        "show_markers": true,
+        "marker_size": 6
+      }
+    },
+
+    {
+      "id": "CHART-ROUTE-HEATMAP",
+      "chart_name": "Route OTD % — Monthly Heatmap",
+      "viz_type": "heatmap",
+      "dataset": "mv_lifecycle_summary",
+      "params": {
+        "all_columns_x": "route_name",
+        "all_columns_y": "month_label",
+        "metric": {
+          "expressionType": "SQL",
+          "sqlExpression": "ROUND(SUM(trips_on_time)::numeric / NULLIF(SUM(trips_created), 0) * 100, 1)",
+          "label": "OTD %"
+        },
+        "linear_color_scheme": "superset_seq_1",
+        "xscale_interval": 1,
+        "yscale_interval": 1,
+        "canvas_image_rendering": "auto",
+        "normalize_across": "y",
+        "show_legend": true,
+        "show_values": true,
+        "value_format": ".0f"
+      }
+    }
+  ]
+}
