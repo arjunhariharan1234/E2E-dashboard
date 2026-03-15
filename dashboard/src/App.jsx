@@ -18,6 +18,7 @@ import MoMTrends from './components/MoMTrends';
 import RouteHeatmap from './components/RouteHeatmap';
 import TripDrillDown from './components/TripDrillDown';
 import Filters from './components/Filters';
+import AdvancedViews from './components/AdvancedViews';
 
 const ALL_DATA = loadDataset();
 
@@ -60,6 +61,7 @@ export default function App() {
     { id: 'routes', label: 'Routes' },
     { id: 'trends', label: 'MoM Trends' },
     { id: 'drilldown', label: 'Trip Details' },
+    { id: 'advanced', label: 'Advanced Views' },
   ];
 
   return (
@@ -152,6 +154,10 @@ export default function App() {
           <Section title="Trip Detail Drill Down">
             <TripDrillDown data={tripDetails} />
           </Section>
+        )}
+
+        {activeSection === 'advanced' && (
+          <AdvancedViews data={filtered} />
         )}
       </div>
     </div>
