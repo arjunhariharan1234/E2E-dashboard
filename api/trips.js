@@ -166,9 +166,14 @@ export default async function handler(req, res) {
 
     const transformed = rows.map((row, i) => transformRow(row, i));
 
-    // Cache for 5 minutes
-    res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-    return res.status(200).json({ data: transformed, count: transformed.length, source: 'databricks' });
+    // Cache for 24 hours on Vercel CDN, serve stale for 48h while revalidating
+    res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
+    return res.status(200).json({
+      data: transformed,
+      count: transformed.length,
+      source: 'databricks',
+      fetchedAt: new Date().toISOString(),
+    });
   } catch (err) {
     console.error('Databricks query error:', err);
     return res.status(500).json({

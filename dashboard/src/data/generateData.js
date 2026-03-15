@@ -153,18 +153,63 @@ function enrichRecords(records) {
   }));
 }
 
+// ── Browser-side 24-hour cache ────────────────────────────────────────
+// Prevents any network call if fresh data exists in localStorage.
+// Databricks is only queried when:
+//   1. No cache exists (first visit)
+//   2. Cache is older than 24 hours
+//   3. User force-refreshes (shift+reload clears cache)
+
+const CACHE_KEY = 'bi_e2e_trips_cache';
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+function getCachedData() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+    return data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function setCachedData(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch (_) {
+    // localStorage full or unavailable — silently skip
+  }
+}
+
 async function fetchFromDatabricks() {
   const res = await fetch('/api/trips');
   const json = await res.json();
   if (json.fallback || json.error) return null;
-  return enrichRecords(json.data);
+  return json.data;
 }
 
 async function loadDatasetLive() {
+  // 1. Check browser cache first — zero cost
+  const cached = getCachedData();
+  if (cached && cached.length > 0) {
+    return { data: enrichRecords(cached), source: 'databricks' };
+  }
+
+  // 2. Try Databricks API (Vercel CDN will also serve from its 24h cache)
   try {
     const live = await fetchFromDatabricks();
-    if (live && live.length > 0) return { data: live, source: 'databricks' };
+    if (live && live.length > 0) {
+      setCachedData(live); // save to browser for next 24h
+      return { data: enrichRecords(live), source: 'databricks' };
+    }
   } catch (_) {}
+
+  // 3. Fallback to static sample data
   return { data: loadDataset(), source: 'static' };
 }
 
