@@ -146,6 +146,28 @@ function loadDataset() {
   }));
 }
 
+function enrichRecords(records) {
+  return records.map((r) => ({
+    ...r,
+    monthLabel: MONTH_LABELS[r.month] || r.month,
+  }));
+}
+
+async function fetchFromDatabricks() {
+  const res = await fetch('/api/trips');
+  const json = await res.json();
+  if (json.fallback || json.error) return null;
+  return enrichRecords(json.data);
+}
+
+async function loadDatasetLive() {
+  try {
+    const live = await fetchFromDatabricks();
+    if (live && live.length > 0) return { data: live, source: 'databricks' };
+  } catch (_) {}
+  return { data: loadDataset(), source: 'static' };
+}
+
 // ── Aggregation helpers ───────────────────────────────────────────────
 
 function aggregateByField(records, field) {
@@ -289,6 +311,7 @@ export {
   FIELD_INFO,
   DELAY_BUCKETS,
   loadDataset,
+  loadDatasetLive,
   aggregateByField,
   aggregateByTwoFields,
   getKPIs,

@@ -1,0 +1,8 @@
+{
+  "name": "e2e-dashboard-api",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@databricks/sql": "^1.8.4"
+  }
+}

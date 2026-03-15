@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   loadDataset,
+  loadDatasetLive,
   getKPIs,
   aggregateByField,
   aggregateByTwoFields,
@@ -20,9 +21,14 @@ import TripDrillDown from './components/TripDrillDown';
 import Filters from './components/Filters';
 import AdvancedViews from './components/AdvancedViews';
 
-const ALL_DATA = loadDataset();
+// Load static data immediately so the UI is never empty
+const STATIC_DATA = loadDataset();
 
 export default function App() {
+  const [allData, setAllData] = useState(STATIC_DATA);
+  const [dataSource, setDataSource] = useState('static');
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     months: MONTHS.map((m) => m.key),
     branches: [],
@@ -30,15 +36,63 @@ export default function App() {
   });
   const [activeSection, setActiveSection] = useState('overview');
 
+  // Try to load live data from Databricks on mount
+  useEffect(() => {
+    loadDatasetLive().then(({ data, source }) => {
+      setAllData(data);
+      setDataSource(source);
+      setLoading(false);
+    });
+  }, []);
+
+  // Derive unique months from live data
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set(allData.map((r) => r.month));
+    const allMonths = MONTHS.filter((m) => monthSet.has(m.key));
+    // Add any months from live data not in the static MONTHS list
+    for (const m of monthSet) {
+      if (!allMonths.find((am) => am.key === m)) {
+        const d = new Date(m + '-01');
+        allMonths.push({ key: m, label: d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) });
+      }
+    }
+    return allMonths.sort((a, b) => a.key.localeCompare(b.key));
+  }, [allData]);
+
+  // Derive unique branches & transporters from live data
+  const availableBranches = useMemo(() => {
+    const set = new Set(allData.map((r) => r.branchName).filter(Boolean));
+    return [...set].sort().map((name) => {
+      const existing = BRANCHES.find((b) => b.name === name);
+      return existing || { id: name, name };
+    });
+  }, [allData]);
+
+  const availableTransporters = useMemo(() => {
+    const set = new Set(allData.map((r) => r.transporterName).filter(Boolean));
+    return [...set].sort().map((name) => {
+      const existing = TRANSPORTERS.find((t) => t.name === name);
+      return existing || { id: name, name };
+    });
+  }, [allData]);
+
+  // Ensure month filters are valid for current data
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      months: availableMonths.map((m) => m.key),
+    }));
+  }, [availableMonths]);
+
   const filtered = useMemo(() => {
-    return ALL_DATA.filter((r) => {
+    return allData.filter((r) => {
       if (!filters.months.includes(r.month)) return false;
       if (filters.branches.length && !filters.branches.includes(r.branchName)) return false;
       if (filters.transporters.length && !filters.transporters.includes(r.transporterName))
         return false;
       return true;
     });
-  }, [filters]);
+  }, [allData, filters]);
 
   const kpis = useMemo(() => getKPIs(filtered), [filtered]);
   const branchData = useMemo(() => aggregateByField(filtered, 'branchName'), [filtered]);
@@ -76,8 +130,27 @@ export default function App() {
               Brakes India &mdash; Indent to Delivery &mdash; Shipment Lifecycle
             </p>
           </div>
-          <div className="text-xs text-blue-300 text-right">
-            <div>Data: Sep 2025 &mdash; Mar 2026</div>
+          <div className="text-xs text-right">
+            <div className="text-blue-300">
+              {availableMonths.length > 0 && (
+                <>Data: {availableMonths[0].label} &mdash; {availableMonths[availableMonths.length - 1].label}</>
+              )}
+            </div>
+            <div className="mt-0.5">
+              {dataSource === 'databricks' ? (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-medium">
+                  Live &mdash; Databricks
+                </span>
+              ) : loading ? (
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-medium">
+                  Connecting...
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-medium">
+                  Sample Data
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -86,9 +159,9 @@ export default function App() {
         <Filters
           filters={filters}
           onChange={setFilters}
-          branches={BRANCHES}
-          transporters={TRANSPORTERS}
-          months={MONTHS}
+          branches={availableBranches}
+          transporters={availableTransporters}
+          months={availableMonths}
         />
 
         <nav className="flex gap-1 mb-4 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
@@ -142,10 +215,10 @@ export default function App() {
         {(activeSection === 'overview' || activeSection === 'trends') && (
           <>
             <Section title="MoM Transporter OTD % (Top 5)">
-              <MoMTrends data={momData} months={MONTHS} />
+              <MoMTrends data={momData} months={availableMonths} />
             </Section>
             <Section title="Route OTD % &mdash; Monthly Heatmap">
-              <RouteHeatmap data={routeMomData} months={MONTHS} />
+              <RouteHeatmap data={routeMomData} months={availableMonths} />
             </Section>
           </>
         )}
