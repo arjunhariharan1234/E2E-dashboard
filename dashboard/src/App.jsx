@@ -145,11 +145,7 @@ export default function App() {
                 <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-medium">
                   Connecting...
                 </span>
-              ) : (
-                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-medium">
-                  Sample Data
-                </span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
