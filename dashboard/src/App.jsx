@@ -12,6 +12,7 @@ import {
 } from './data/generateData';
 import KPICard from './components/KPICard';
 import BranchPerformance from './components/BranchPerformance';
+import BranchScorecard from './components/BranchScorecard';
 import TransporterScorecard from './components/TransporterScorecard';
 import TransporterFulfilment from './components/TransporterFulfilment';
 import RouteAnalysis from './components/RouteAnalysis';
@@ -186,9 +187,14 @@ export default function App() {
         </div>
 
         {(activeSection === 'overview' || activeSection === 'branch') && (
-          <Section title="Branch Performance &mdash; On Time vs Delayed">
-            <BranchPerformance data={branchData} />
-          </Section>
+          <>
+            <Section title="Branch Performance Scorecard">
+              <BranchScorecard data={branchData} />
+            </Section>
+            <Section title="Branch Performance &mdash; On Time vs Delayed">
+              <BranchPerformance data={branchData} />
+            </Section>
+          </>
         )}
 
         {(activeSection === 'overview' || activeSection === 'transporter') && (
