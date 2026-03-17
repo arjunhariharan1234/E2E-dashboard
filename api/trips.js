@@ -52,7 +52,10 @@ ORDER BY created_at DESC
 `;
 
 function transformRow(row, index) {
-  const createdAt = row.created_at ? String(row.created_at) : '';
+  const rawDate = row.created_at;
+  const createdAt = rawDate instanceof Date
+    ? rawDate.toISOString().slice(0, 19).replace('T', ' ')
+    : rawDate ? String(rawDate) : '';
   const month = createdAt.slice(0, 7);
 
   const staBreach = row.sta_breached === 1 || row.sta_breached === '1' || row.sta_breached === true;
