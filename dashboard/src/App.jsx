@@ -32,6 +32,7 @@ export default function App() {
   const [dataSource, setDataSource] = useState('static');
   const [loading, setLoading] = useState(false);
   const [liveAvailable, setLiveAvailable] = useState(false);
+  const [liveError, setLiveError] = useState('');
 
   const [filters, setFilters] = useState({
     months: MONTHS.map((m) => m.key),
@@ -68,6 +69,7 @@ export default function App() {
   }, []);
 
   const handleToggleSource = (source) => {
+    setLiveError('');
     if (source === 'live') {
       if (liveData) {
         setAllData(liveData);
@@ -81,6 +83,7 @@ export default function App() {
             setAllData(data);
             setDataSource('databricks');
           } else {
+            setLiveError('Could not connect — check Databricks credentials');
             setDataSource('static');
           }
           setLoading(false);
@@ -219,8 +222,11 @@ export default function App() {
             {dataSource === 'databricks' && (
               <span className="text-[10px] text-emerald-300">{allData.length.toLocaleString()} trips from Databricks</span>
             )}
-            {dataSource === 'static' && (
+            {dataSource === 'static' && !liveError && (
               <span className="text-[10px] text-blue-300">{allData.length.toLocaleString()} trips from dataset</span>
+            )}
+            {liveError && (
+              <span className="text-[10px] text-red-400">{liveError}</span>
             )}
           </div>
         </div>

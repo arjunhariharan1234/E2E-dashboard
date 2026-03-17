@@ -192,10 +192,18 @@ function setCachedData(data) {
 }
 
 async function fetchFromDatabricks() {
-  const res = await fetch('/api/trips');
-  const json = await res.json();
-  if (json.fallback || json.error) return null;
-  return json.data;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout
+  try {
+    const res = await fetch('/api/trips', { signal: controller.signal });
+    clearTimeout(timeout);
+    const json = await res.json();
+    if (json.fallback || json.error) return null;
+    return json.data;
+  } catch (err) {
+    clearTimeout(timeout);
+    throw err;
+  }
 }
 
 async function loadDatasetLive() {
