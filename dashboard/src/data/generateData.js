@@ -17,6 +17,7 @@ const BRANCHES = [
   { id: '176460', name: 'Jhagadia - LVBU' },
   { id: '175522', name: 'Polambakkam - HVBU' },
   { id: '175510', name: 'Thervoy kandigai - HVBU' },
+  { id: '175013', name: 'Maduravoyal - HVBU' },
 ];
 
 const TRANSPORTERS = [
