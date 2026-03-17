@@ -33,6 +33,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [liveAvailable, setLiveAvailable] = useState(false);
   const [liveError, setLiveError] = useState('');
+  const [fetchedAt, setFetchedAt] = useState(null);
 
   const [filters, setFilters] = useState({
     months: MONTHS.map((m) => m.key),
@@ -60,10 +61,11 @@ export default function App() {
 
   // Attempt to fetch live data in background on mount
   useEffect(() => {
-    loadDatasetLive().then(({ data, source }) => {
+    loadDatasetLive().then(({ data, source, fetchedAt: ft }) => {
       if (source === 'databricks') {
         setLiveData(data);
         setLiveAvailable(true);
+        setFetchedAt(ft);
       }
     });
   }, []);
@@ -76,12 +78,13 @@ export default function App() {
         setDataSource('databricks');
       } else {
         setLoading(true);
-        loadDatasetLive().then(({ data, source: s }) => {
+        loadDatasetLive().then(({ data, source: s, fetchedAt: ft }) => {
           if (s === 'databricks') {
             setLiveData(data);
             setLiveAvailable(true);
             setAllData(data);
             setDataSource('databricks');
+            setFetchedAt(ft);
           } else {
             setLiveError('Could not connect — check Databricks credentials');
             setDataSource('static');
@@ -220,7 +223,12 @@ export default function App() {
               </button>
             </div>
             {dataSource === 'databricks' && (
-              <span className="text-[10px] text-emerald-300">{allData.length.toLocaleString()} trips from Databricks</span>
+              <span className="text-[10px] text-emerald-300">
+                {allData.length.toLocaleString()} trips from Databricks
+                {fetchedAt && (
+                  <> &middot; Last refresh: {new Date(fetchedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</>
+                )}
+              </span>
             )}
             {dataSource === 'static' && !liveError && (
               <span className="text-[10px] text-blue-300">{allData.length.toLocaleString()} trips from dataset</span>

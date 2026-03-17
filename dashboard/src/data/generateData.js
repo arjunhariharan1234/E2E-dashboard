@@ -172,20 +172,24 @@ function getCachedData() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const { data, timestamp } = JSON.parse(raw);
-    if (Date.now() - timestamp > CACHE_TTL) {
+    const cached = JSON.parse(raw);
+    if (Date.now() - cached.timestamp > CACHE_TTL) {
       localStorage.removeItem(CACHE_KEY);
       return null;
     }
-    return data;
+    // Support both old format (cached.data = array) and new format (cached.data = {data, fetchedAt})
+    if (Array.isArray(cached.data)) {
+      return { data: cached.data, fetchedAt: cached.fetchedAt || new Date(cached.timestamp).toISOString() };
+    }
+    return cached.data;
   } catch (_) {
     return null;
   }
 }
 
-function setCachedData(data) {
+function setCachedData(payload) {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data: payload, timestamp: Date.now() }));
   } catch (_) {
     // localStorage full or unavailable — silently skip
   }
@@ -199,7 +203,7 @@ async function fetchFromDatabricks() {
     clearTimeout(timeout);
     const json = await res.json();
     if (json.fallback || json.error) return null;
-    return json.data;
+    return { data: json.data, fetchedAt: json.fetchedAt || new Date().toISOString() };
   } catch (err) {
     clearTimeout(timeout);
     throw err;
@@ -209,21 +213,21 @@ async function fetchFromDatabricks() {
 async function loadDatasetLive() {
   // 1. Check browser cache first — zero cost
   const cached = getCachedData();
-  if (cached && cached.length > 0) {
-    return { data: enrichRecords(cached), source: 'databricks' };
+  if (cached && cached.data && cached.data.length > 0) {
+    return { data: enrichRecords(cached.data), source: 'databricks', fetchedAt: cached.fetchedAt };
   }
 
   // 2. Try Databricks API (Vercel CDN will also serve from its 24h cache)
   try {
-    const live = await fetchFromDatabricks();
-    if (live && live.length > 0) {
-      setCachedData(live); // save to browser for next 24h
-      return { data: enrichRecords(live), source: 'databricks' };
+    const result = await fetchFromDatabricks();
+    if (result && result.data && result.data.length > 0) {
+      setCachedData({ data: result.data, fetchedAt: result.fetchedAt });
+      return { data: enrichRecords(result.data), source: 'databricks', fetchedAt: result.fetchedAt };
     }
   } catch (_) {}
 
   // 3. Fallback to static sample data
-  return { data: loadDataset(), source: 'static' };
+  return { data: loadDataset(), source: 'static', fetchedAt: null };
 }
 
 // ── Aggregation helpers ───────────────────────────────────────────────
