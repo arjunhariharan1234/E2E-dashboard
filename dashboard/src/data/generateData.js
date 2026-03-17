@@ -122,6 +122,10 @@ const FIELD_INFO = {
   freightValue:     { column: 'freight_value_indent',  label: 'Freight Value',        desc: 'Freight cost for the indent in INR. Derived from vehicle_rate or rate_per_tonne × material_weight.',
                       formula: 'freight_value = vehicle_rate (PER_TRUCK) OR rate_per_tonne × material_weight (PER_TONNE)' },
 
+  // ── Filter fields ──
+  businessUnit:     { column: 'branch_name',            label: 'Business Unit',        desc: 'Derived from branch_name by checking if it contains "HVBU" or "LVBU". HVBU = Heavy Vehicle Business Unit, LVBU = Light Vehicle Business Unit. Filters all data to show only branches belonging to the selected business unit.',
+                      formula: 'IF branch_name CONTAINS "HVBU" → HVBU; IF branch_name CONTAINS "LVBU" → LVBU' },
+
   // ── KPI formulas ──
   totalTrips:       { column: 'COUNT(trip_id)',         label: 'Total Trips',          desc: 'Total number of trips created in the selected period.',
                       formula: 'COUNT(DISTINCT trip_id) WHERE trip_status IS NOT NULL' },

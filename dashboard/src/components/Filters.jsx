@@ -1,4 +1,10 @@
 import { useState } from 'react';
+import FieldInfo from './FieldInfo';
+
+const BUSINESS_UNITS = [
+  { key: 'HVBU', label: 'HVBU', desc: 'Heavy Vehicle Business Unit' },
+  { key: 'LVBU', label: 'LVBU', desc: 'Light Vehicle Business Unit' },
+];
 
 export default function Filters({ filters, onChange, branches, transporters, months }) {
   const [open, setOpen] = useState(false);
@@ -19,15 +25,20 @@ export default function Filters({ filters, onChange, branches, transporters, mon
     onChange({ ...filters, months: next });
   };
 
+  const setBusinessUnit = (key) => {
+    onChange({ ...filters, businessUnit: filters.businessUnit === key ? '' : key });
+  };
+
   const clearAll = () => {
     onChange({
       months: months.map((m) => m.key),
+      businessUnit: '',
       branches: [],
       transporters: [],
     });
   };
 
-  const hasFilters = filters.branches.length > 0 || filters.transporters.length > 0 || filters.months.length !== months.length;
+  const hasFilters = filters.branches.length > 0 || filters.transporters.length > 0 || filters.months.length !== months.length || !!filters.businessUnit;
 
   return (
     <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden">
@@ -51,7 +62,7 @@ export default function Filters({ filters, onChange, branches, transporters, mon
 
       {open && (
         <div className="px-5 pb-4 border-t border-gray-100 pt-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Month filter */}
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
@@ -69,6 +80,30 @@ export default function Filters({ filters, onChange, branches, transporters, mon
                     }`}
                   >
                     {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Business Unit filter */}
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                Business Unit
+                <FieldInfo field="businessUnit" />
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {BUSINESS_UNITS.map((bu) => (
+                  <button
+                    key={bu.key}
+                    onClick={() => setBusinessUnit(bu.key)}
+                    title={bu.desc}
+                    className={`px-3 py-1.5 text-xs rounded-md border transition cursor-pointer ${
+                      filters.businessUnit === bu.key
+                        ? 'bg-[#e67e22] text-white border-[#e67e22]'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    {bu.label}
                   </button>
                 ))}
               </div>

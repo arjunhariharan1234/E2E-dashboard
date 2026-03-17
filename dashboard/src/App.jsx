@@ -32,6 +32,7 @@ export default function App() {
 
   const [filters, setFilters] = useState({
     months: MONTHS.map((m) => m.key),
+    businessUnit: '',
     branches: [],
     transporters: [],
   });
@@ -88,6 +89,11 @@ export default function App() {
   const filtered = useMemo(() => {
     return allData.filter((r) => {
       if (!filters.months.includes(r.month)) return false;
+      if (filters.businessUnit) {
+        const bu = r.branchName || '';
+        if (filters.businessUnit === 'HVBU' && !bu.includes('HVBU')) return false;
+        if (filters.businessUnit === 'LVBU' && !bu.includes('LVBU')) return false;
+      }
       if (filters.branches.length && !filters.branches.includes(r.branchName)) return false;
       if (filters.transporters.length && !filters.transporters.includes(r.transporterName))
         return false;
@@ -188,11 +194,11 @@ export default function App() {
 
         {(activeSection === 'overview' || activeSection === 'branch') && (
           <>
-            <Section title="Branch Performance Scorecard">
-              <BranchScorecard data={branchData} />
-            </Section>
             <Section title="Branch Performance &mdash; On Time vs Delayed">
               <BranchPerformance data={branchData} />
+            </Section>
+            <Section title="Branch Performance Scorecard">
+              <BranchScorecard data={branchData} />
             </Section>
           </>
         )}
