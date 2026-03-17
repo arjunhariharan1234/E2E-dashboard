@@ -10,26 +10,8 @@ import { DBSQLClient } from '@databricks/sql';
 // Find these in: Databricks → SQL Warehouses → your warehouse → Connection Details
 // ──────────────────────────────────────────────────────────────────────
 
-// Brakes India branch names — filters 8M+ rows down to ~13K relevant trips
-const BRAKES_BRANCHES = [
-  'Sholinghur - HVBU',
-  'Kuruli - Pune - LVBU - Subham - WH',
-  'Pune - HVBU - Subham - WH',
-  'Sanand - LVBU',
-  'Vijayshri - TG05 - Pithampur - HVBU',
-  'Padi - LVBU',
-  'Sitarganj - HVBU',
-  'Padi - HVBU',
-  'Polambakkam - LVBU',
-  'Avadi - HVBU - Aztec',
-  'Jamshedpur - HVBU - BD25',
-  'Jhagadia - LVBU',
-  'Polambakkam - HVBU',
-  'Thervoy kandigai - HVBU',
-  'Maduravoyal - HVBU',
-];
-
-const branchList = BRAKES_BRANCHES.map(b => `'${b}'`).join(', ');
+// Brakes India company_id — filters 8M+ rows down to ~13K relevant trips
+const COMPANY_ID = '1525654';
 
 const QUERY = `
 SELECT
@@ -64,7 +46,8 @@ SELECT
   freight_value_indent
 FROM azure_hive_metastore.golden_layer_db.end_to_end_trips_data
 WHERE created_at IS NOT NULL
-  AND branch_name IN (${branchList})
+  AND company_id = '${COMPANY_ID}'
+  AND created_at >= '2025-09-01'
 ORDER BY created_at DESC
 `;
 
