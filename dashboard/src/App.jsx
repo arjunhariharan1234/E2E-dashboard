@@ -28,8 +28,10 @@ const STATIC_DATA = loadDataset();
 
 export default function App() {
   const [allData, setAllData] = useState(STATIC_DATA);
+  const [liveData, setLiveData] = useState(null);
   const [dataSource, setDataSource] = useState('static');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [liveAvailable, setLiveAvailable] = useState(false);
 
   const [filters, setFilters] = useState({
     months: MONTHS.map((m) => m.key),
@@ -55,14 +57,40 @@ export default function App() {
     }
   };
 
-  // Try to load live data from Databricks on mount
+  // Attempt to fetch live data in background on mount
   useEffect(() => {
     loadDatasetLive().then(({ data, source }) => {
-      setAllData(data);
-      setDataSource(source);
-      setLoading(false);
+      if (source === 'databricks') {
+        setLiveData(data);
+        setLiveAvailable(true);
+      }
     });
   }, []);
+
+  const handleToggleSource = (source) => {
+    if (source === 'live') {
+      if (liveData) {
+        setAllData(liveData);
+        setDataSource('databricks');
+      } else {
+        setLoading(true);
+        loadDatasetLive().then(({ data, source: s }) => {
+          if (s === 'databricks') {
+            setLiveData(data);
+            setLiveAvailable(true);
+            setAllData(data);
+            setDataSource('databricks');
+          } else {
+            setDataSource('static');
+          }
+          setLoading(false);
+        });
+      }
+    } else {
+      setAllData(STATIC_DATA);
+      setDataSource('static');
+    }
+  };
 
   // Derive unique months from live data
   const availableMonths = useMemo(() => {
@@ -159,23 +187,41 @@ export default function App() {
             transporters={availableTransporters}
             onSelect={handleSearchSelect}
           />
-          <div className="text-xs text-right shrink-0">
-            <div className="text-blue-300">
+          <div className="shrink-0 flex flex-col items-end gap-1.5">
+            <div className="text-blue-300 text-xs">
               {availableMonths.length > 0 && (
                 <>Data: {availableMonths[0].label} &mdash; {availableMonths[availableMonths.length - 1].label}</>
               )}
             </div>
-            <div className="mt-0.5">
-              {dataSource === 'databricks' ? (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-medium">
-                  Live &mdash; Databricks
-                </span>
-              ) : loading ? (
-                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-medium">
-                  Connecting...
-                </span>
-              ) : null}
+            <div className="flex items-center gap-1 bg-white/10 rounded-full p-0.5">
+              <button
+                onClick={() => handleToggleSource('static')}
+                className={`px-3 py-1 rounded-full text-[11px] font-medium transition cursor-pointer ${
+                  dataSource === 'static'
+                    ? 'bg-blue-500 text-white shadow'
+                    : 'text-blue-200 hover:text-white'
+                }`}
+              >
+                Dataset
+              </button>
+              <button
+                onClick={() => handleToggleSource('live')}
+                disabled={loading}
+                className={`px-3 py-1 rounded-full text-[11px] font-medium transition cursor-pointer ${
+                  dataSource === 'databricks'
+                    ? 'bg-emerald-500 text-white shadow'
+                    : 'text-blue-200 hover:text-white'
+                } ${loading ? 'opacity-50 cursor-wait' : ''}`}
+              >
+                {loading ? 'Connecting...' : 'Live'}
+              </button>
             </div>
+            {dataSource === 'databricks' && (
+              <span className="text-[10px] text-emerald-300">{allData.length.toLocaleString()} trips from Databricks</span>
+            )}
+            {dataSource === 'static' && (
+              <span className="text-[10px] text-blue-300">{allData.length.toLocaleString()} trips from dataset</span>
+            )}
           </div>
         </div>
       </header>
