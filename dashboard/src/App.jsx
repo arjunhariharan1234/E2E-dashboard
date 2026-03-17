@@ -21,6 +21,7 @@ import RouteHeatmap from './components/RouteHeatmap';
 import TripDrillDown from './components/TripDrillDown';
 import Filters from './components/Filters';
 import AdvancedViews from './components/AdvancedViews';
+import GlobalSearch from './components/GlobalSearch';
 
 // Load static data immediately so the UI is never empty
 const STATIC_DATA = loadDataset();
@@ -37,6 +38,22 @@ export default function App() {
     transporters: [],
   });
   const [activeSection, setActiveSection] = useState('overview');
+
+  const handleSearchSelect = (type, name) => {
+    if (type === 'branch') {
+      setFilters((prev) => ({
+        ...prev,
+        branches: prev.branches.includes(name) ? prev.branches : [...prev.branches, name],
+      }));
+      setActiveSection('branch');
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        transporters: prev.transporters.includes(name) ? prev.transporters : [...prev.transporters, name],
+      }));
+      setActiveSection('transporter');
+    }
+  };
 
   // Try to load live data from Databricks on mount
   useEffect(() => {
@@ -128,8 +145,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#f0f2f5]">
       <header className="bg-[#1e3a5f] text-white px-6 py-4 shadow-lg sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <div>
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+          <div className="shrink-0">
             <h1 className="text-xl font-semibold tracking-tight">
               End to End Lifecycle Dashboard
             </h1>
@@ -137,7 +154,12 @@ export default function App() {
               Brakes India &mdash; Indent to Delivery &mdash; Shipment Lifecycle
             </p>
           </div>
-          <div className="text-xs text-right">
+          <GlobalSearch
+            branches={availableBranches}
+            transporters={availableTransporters}
+            onSelect={handleSearchSelect}
+          />
+          <div className="text-xs text-right shrink-0">
             <div className="text-blue-300">
               {availableMonths.length > 0 && (
                 <>Data: {availableMonths[0].label} &mdash; {availableMonths[availableMonths.length - 1].label}</>
