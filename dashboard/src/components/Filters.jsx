@@ -22,11 +22,21 @@ export default function Filters({ filters, onChange, branches, transporters, mon
     const next = current.includes(key)
       ? current.filter((v) => v !== key)
       : [...current, key];
-    onChange({ ...filters, months: next });
+    // Clear custom date range when using month buttons
+    onChange({ ...filters, months: next, dateFrom: '', dateTo: '' });
   };
 
   const setBusinessUnit = (key) => {
     onChange({ ...filters, businessUnit: filters.businessUnit === key ? '' : key });
+  };
+
+  const setDateRange = (field, value) => {
+    const updated = { ...filters, [field]: value };
+    // When custom dates are set, auto-select all months (date filter takes priority)
+    if (updated.dateFrom || updated.dateTo) {
+      updated.months = months.map((m) => m.key);
+    }
+    onChange(updated);
   };
 
   const clearAll = () => {
@@ -35,10 +45,12 @@ export default function Filters({ filters, onChange, branches, transporters, mon
       businessUnit: '',
       branches: [],
       transporters: [],
+      dateFrom: '',
+      dateTo: '',
     });
   };
 
-  const hasFilters = filters.branches.length > 0 || filters.transporters.length > 0 || filters.months.length !== months.length || !!filters.businessUnit;
+  const hasFilters = filters.branches.length > 0 || filters.transporters.length > 0 || filters.months.length !== months.length || !!filters.businessUnit || !!filters.dateFrom || !!filters.dateTo;
 
   return (
     <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden">
@@ -63,18 +75,37 @@ export default function Filters({ filters, onChange, branches, transporters, mon
       {open && (
         <div className="px-5 pb-4 border-t border-gray-100 pt-3">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Month filter */}
+            {/* Date filters */}
             <div>
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
                 Date Range
               </label>
+              {/* Custom date picker */}
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="date"
+                  value={filters.dateFrom || ''}
+                  onChange={(e) => setDateRange('dateFrom', e.target.value)}
+                  className="px-2 py-1.5 text-xs rounded-md border border-gray-200 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] w-[130px]"
+                  placeholder="From"
+                />
+                <span className="text-xs text-gray-400">to</span>
+                <input
+                  type="date"
+                  value={filters.dateTo || ''}
+                  onChange={(e) => setDateRange('dateTo', e.target.value)}
+                  className="px-2 py-1.5 text-xs rounded-md border border-gray-200 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] w-[130px]"
+                  placeholder="To"
+                />
+              </div>
+              {/* Month quick-select buttons */}
               <div className="flex flex-wrap gap-1.5">
                 {months.map((m) => (
                   <button
                     key={m.key}
                     onClick={() => toggleMonth(m.key)}
                     className={`px-3 py-1.5 text-xs rounded-md border transition cursor-pointer ${
-                      filters.months.includes(m.key)
+                      filters.months.includes(m.key) && !filters.dateFrom && !filters.dateTo
                         ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                     }`}
@@ -83,6 +114,9 @@ export default function Filters({ filters, onChange, branches, transporters, mon
                   </button>
                 ))}
               </div>
+              {(filters.dateFrom || filters.dateTo) && (
+                <p className="text-[10px] text-amber-600 mt-1">Custom date range active — month buttons ignored</p>
+              )}
             </div>
 
             {/* Business Unit filter */}

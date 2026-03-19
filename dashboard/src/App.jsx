@@ -40,6 +40,8 @@ export default function App() {
     businessUnit: '',
     branches: [],
     transporters: [],
+    dateFrom: '',
+    dateTo: '',
   });
   const [activeSection, setActiveSection] = useState('overview');
 
@@ -138,8 +140,16 @@ export default function App() {
   }, [availableMonths]);
 
   const filtered = useMemo(() => {
+    const hasCustomDate = filters.dateFrom || filters.dateTo;
     return allData.filter((r) => {
-      if (!filters.months.includes(r.month)) return false;
+      // Date filtering: custom date range takes priority over month buttons
+      if (hasCustomDate) {
+        const d = r.createdAt ? r.createdAt.slice(0, 10) : '';
+        if (filters.dateFrom && d < filters.dateFrom) return false;
+        if (filters.dateTo && d > filters.dateTo) return false;
+      } else {
+        if (!filters.months.includes(r.month)) return false;
+      }
       if (filters.businessUnit) {
         const bu = r.branchName || '';
         if (filters.businessUnit === 'HVBU' && !bu.includes('HVBU')) return false;
